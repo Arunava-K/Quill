@@ -1,10 +1,10 @@
-# Database files
+# Database files that should not trigger rebuilds
 *.db
 *.db-shm
 *.db-wal
 *.db-journal
 
-# Rust build artifacts
+# Build artifacts
 target/
 Cargo.lock
 

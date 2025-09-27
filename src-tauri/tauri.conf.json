@@ -23,11 +23,6 @@
       "csp": null
     }
   },
-  "plugins": {
-    "sql": {
-      "preload": ["sqlite:notes.db"]
-    }
-  },
   "bundle": {
     "active": true,
     "targets": "all",

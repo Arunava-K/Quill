@@ -1,16 +1,41 @@
 mod commands;
 
 use tauri::{Manager, WindowEvent};
-use std::collections::HashMap;
-use std::sync::Mutex;
+use sqlx::{SqlitePool, migrate::MigrateDatabase, Sqlite};
+use std::sync::Arc;
 
-type NotesStorage = Mutex<HashMap<i64, commands::Note>>;
+const DATABASE_URL: &str = "sqlite:notes.db";
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
-pub fn run() {
+pub async fn run() {
+    // Initialize database
+    if !Sqlite::database_exists(DATABASE_URL).await.unwrap_or(false) {
+        Sqlite::create_database(DATABASE_URL).await.expect("Failed to create database");
+    }
+
+    let pool = SqlitePool::connect(DATABASE_URL)
+        .await
+        .expect("Failed to connect to database");
+
+    // Run migrations
+    match sqlx::query(include_str!("../migrations/1_create_notes_table.sql"))
+        .execute(&pool)
+        .await
+    {
+        Ok(_) => println!("Database migration completed successfully"),
+        Err(e) => {
+            // If table already exists, that's fine - just log it
+            if e.to_string().contains("already exists") {
+                println!("Database table already exists, skipping migration");
+            } else {
+                panic!("Failed to run migrations: {}", e);
+            }
+        }
+    }
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .manage(NotesStorage::new(HashMap::new()))
+        .manage(Arc::new(pool))
         .invoke_handler(tauri::generate_handler![
             commands::add_note,
             commands::get_notes,

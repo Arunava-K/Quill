@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
-use tauri::Manager;
+use tauri::State;
+use sqlx::{SqlitePool, Row};
+use std::sync::Arc;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Note {
@@ -10,75 +12,121 @@ pub struct Note {
     pub updated_at: String,
 }
 
-// In-memory storage for now (we'll replace with SQLite later)
-use std::sync::Mutex;
-use std::collections::HashMap;
-
-type NotesStorage = Mutex<HashMap<i64, Note>>;
-
 #[tauri::command]
 pub async fn add_note(
-    app: tauri::AppHandle,
+    pool: State<'_, Arc<SqlitePool>>,
     title: String,
     content: String,
 ) -> Result<Note, String> {
-    let storage = app.state::<NotesStorage>();
-    let mut notes = storage.lock().unwrap();
-    
-    let id = notes.len() as i64 + 1;
     let now = chrono::Utc::now().to_rfc3339();
     
-    let note = Note {
+    // Insert the new note
+    let result = sqlx::query(
+        "INSERT INTO notes (title, content, created_at, updated_at) VALUES (?, ?, ?, ?)"
+    )
+    .bind(&title)
+    .bind(&content)
+    .bind(&now)
+    .bind(&now)
+    .execute(&**pool)
+    .await
+    .map_err(|e| e.to_string())?;
+    
+    let id = result.last_insert_rowid();
+    
+    Ok(Note {
         id,
-        title: title.clone(),
-        content: content.clone(),
+        title,
+        content,
         created_at: now.clone(),
         updated_at: now,
-    };
-    
-    notes.insert(id, note.clone());
-    Ok(note)
+    })
 }
 
 #[tauri::command]
-pub async fn get_notes(app: tauri::AppHandle) -> Result<Vec<Note>, String> {
-    let storage = app.state::<NotesStorage>();
-    let notes = storage.lock().unwrap();
+pub async fn get_notes(pool: State<'_, Arc<SqlitePool>>) -> Result<Vec<Note>, String> {
+    // Query all notes ordered by updated_at descending
+    let rows = sqlx::query(
+        "SELECT id, title, content, created_at, updated_at FROM notes ORDER BY updated_at DESC"
+    )
+    .fetch_all(&**pool)
+    .await
+    .map_err(|e| e.to_string())?;
     
-    let mut notes_vec: Vec<Note> = notes.values().cloned().collect();
-    notes_vec.sort_by(|a, b| b.updated_at.cmp(&a.updated_at));
+    let mut notes = Vec::new();
+    for row in rows {
+        let note = Note {
+            id: row.get::<i64, _>("id"),
+            title: row.get::<String, _>("title"),
+            content: row.get::<String, _>("content"),
+            created_at: row.get::<String, _>("created_at"),
+            updated_at: row.get::<String, _>("updated_at"),
+        };
+        notes.push(note);
+    }
     
-    Ok(notes_vec)
+    Ok(notes)
 }
 
 #[tauri::command]
 pub async fn update_note(
-    app: tauri::AppHandle,
+    pool: State<'_, Arc<SqlitePool>>,
     id: i64,
     title: String,
     content: String,
 ) -> Result<Note, String> {
-    let storage = app.state::<NotesStorage>();
-    let mut notes = storage.lock().unwrap();
+    let now = chrono::Utc::now().to_rfc3339();
     
-    if let Some(note) = notes.get_mut(&id) {
-        note.title = title.clone();
-        note.content = content.clone();
-        note.updated_at = chrono::Utc::now().to_rfc3339();
-        Ok(note.clone())
-    } else {
-        Err("Note not found".to_string())
+    // Update the note
+    let result = sqlx::query(
+        "UPDATE notes SET title = ?, content = ?, updated_at = ? WHERE id = ?"
+    )
+    .bind(&title)
+    .bind(&content)
+    .bind(&now)
+    .bind(id)
+    .execute(&**pool)
+    .await
+    .map_err(|e| e.to_string())?;
+    
+    if result.rows_affected() == 0 {
+        return Err("Note not found".to_string());
     }
+    
+    // Get the updated note
+    let row = sqlx::query(
+        "SELECT id, title, content, created_at, updated_at FROM notes WHERE id = ?"
+    )
+    .bind(id)
+    .fetch_one(&**pool)
+    .await
+    .map_err(|e| e.to_string())?;
+    
+    let note = Note {
+        id: row.get::<i64, _>("id"),
+        title: row.get::<String, _>("title"),
+        content: row.get::<String, _>("content"),
+        created_at: row.get::<String, _>("created_at"),
+        updated_at: row.get::<String, _>("updated_at"),
+    };
+    
+    Ok(note)
 }
 
 #[tauri::command]
-pub async fn delete_note(app: tauri::AppHandle, id: i64) -> Result<(), String> {
-    let storage = app.state::<NotesStorage>();
-    let mut notes = storage.lock().unwrap();
+pub async fn delete_note(pool: State<'_, Arc<SqlitePool>>, id: i64) -> Result<(), String> {
+    // Delete the note
+    let result = sqlx::query(
+        "DELETE FROM notes WHERE id = ?"
+    )
+    .bind(id)
+    .execute(&**pool)
+    .await
+    .map_err(|e| e.to_string())?;
     
-    if notes.remove(&id).is_some() {
-        Ok(())
-    } else {
-        Err("Note not found".to_string())
+    if result.rows_affected() == 0 {
+        return Err("Note not found".to_string());
     }
+    
+    Ok(())
 }
