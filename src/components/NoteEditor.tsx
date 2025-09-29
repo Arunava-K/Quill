@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import { Note } from "../types";
+import SidebarToggle from "./SidebarToggle";
 
 interface NoteEditorProps {
   note: Note | null;
   onUpdateNote: (id: number, title: string, content: string) => void;
+  onToggleSidebar?: () => void;
 }
 
-export default function NoteEditor({ note, onUpdateNote }: NoteEditorProps) {
+export default function NoteEditor({ note, onUpdateNote, onToggleSidebar }: NoteEditorProps) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [isEditing, setIsEditing] = useState(false);
@@ -62,18 +64,26 @@ export default function NoteEditor({ note, onUpdateNote }: NoteEditorProps) {
       {/* Header */}
       <div className="p-6 border-b border-primary-100/50">
         <div className="flex items-start justify-between mb-4">
-          <div className="flex-1 mr-4">
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => {
-                setTitle(e.target.value);
-                setIsEditing(true);
-              }}
-              onKeyDown={handleKeyDown}
-              className="text-2xl font-bold text-neutral-800 bg-transparent border-none outline-none w-full placeholder-neutral-400 focus:placeholder-neutral-300 transition-colors"
-              placeholder="Untitled note..."
-            />
+          <div className="flex items-start space-x-4 flex-1 mr-4">
+            {/* Sidebar Toggle Button */}
+            {onToggleSidebar && (
+              <div className="pt-1">
+                <SidebarToggle onToggle={onToggleSidebar} />
+              </div>
+            )}
+            <div className="flex-1">
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  setIsEditing(true);
+                }}
+                onKeyDown={handleKeyDown}
+                className="text-2xl font-bold text-neutral-800 bg-transparent border-none outline-none w-full placeholder-neutral-400 focus:placeholder-neutral-300 transition-colors"
+                placeholder="Untitled note..."
+              />
+            </div>
           </div>
           {isEditing && (
             <button

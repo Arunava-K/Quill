@@ -12,13 +12,13 @@ export default function RecentNotes({ notes, onSelectNote }: RecentNotesProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="flex flex-wrap gap-6">
       {notes.map((note, index) => (
         <NoteCard
           key={note.id}
           note={note}
           onClick={() => onSelectNote(note)}
-          className={`animate-fade-in`}
+          className={`animate-fade-in flex-1 min-w-[300px] max-w-[calc(33.333%-16px)]`}
           style={{ animationDelay: `${index * 100}ms` } as React.CSSProperties}
         />
       ))}

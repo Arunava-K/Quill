@@ -45,7 +45,7 @@ export default function NoteCard({ note, onClick, showFolder = false, className 
 
   return (
     <div
-      className={`group relative rounded-2xl p-6 cursor-pointer transition-all duration-200 hover:shadow-medium hover:-translate-y-1 animate-fade-in ${className}`}
+      className={`group relative rounded-2xl p-6 cursor-pointer max-w-96 ${className}`}
       style={{
         backgroundColor: 'var(--color-background)',
         border: '1px solid var(--color-neutral-300)',

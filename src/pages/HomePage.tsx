@@ -4,13 +4,15 @@ import { Note } from "../types";
 import NoteCard from "../components/NoteCard";
 import QuickStats from "../components/QuickStats";
 import RecentNotes from "../components/RecentNotes";
+import SidebarToggle from "../components/SidebarToggle";
 
 interface HomePageProps {
   onCreateNote: () => void;
   onSelectNote: (note: Note) => void;
+  onToggleSidebar?: () => void;
 }
 
-export default function HomePage({ onCreateNote, onSelectNote }: HomePageProps) {
+export default function HomePage({ onCreateNote, onSelectNote, onToggleSidebar }: HomePageProps) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -60,10 +62,10 @@ export default function HomePage({ onCreateNote, onSelectNote }: HomePageProps) 
   }
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 flex flex-col h-full">
       {/* Header */}
       <div 
-        className="sticky top-0 z-10 backdrop-blur-sm border-b"
+        className="sticky top-0 z-10 backdrop-blur-sm border-b flex-shrink-0"
         style={{ 
           backgroundColor: 'rgba(245, 244, 241, 0.8)',
           borderColor: 'var(--color-neutral-300)'
@@ -71,19 +73,26 @@ export default function HomePage({ onCreateNote, onSelectNote }: HomePageProps) 
       >
         <div className="px-8 py-6">
           <div className="flex items-center justify-between mb-2">
-            <div>
-              <h1 
-                className="text-3xl font-bold mb-1"
-                style={{ color: 'var(--color-text-primary)' }}
-              >
-                Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}! 👋
-              </h1>
-              <p style={{ color: 'var(--color-text-secondary)' }}>
-                {notes.length === 0 
-                  ? "Ready to capture your first thought?" 
-                  : `You have ${notes.length} note${notes.length === 1 ? '' : 's'} in your workspace`
-                }
-              </p>
+            <div className="flex items-center space-x-4">
+              {/* Sidebar Toggle Button */}
+              {onToggleSidebar && (
+                <SidebarToggle onToggle={onToggleSidebar} />
+              )}
+              
+              <div>
+                <h1 
+                  className="text-3xl font-bold mb-1"
+                  style={{ color: 'var(--color-text-primary)' }}
+                >
+                  Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}! 👋
+                </h1>
+                <p style={{ color: 'var(--color-text-secondary)' }}>
+                  {notes.length === 0 
+                    ? "Ready to capture your first thought?" 
+                    : `You have ${notes.length} note${notes.length === 1 ? '' : 's'} in your workspace`
+                  }
+                </p>
+              </div>
             </div>
             <button
               onClick={onCreateNote}
@@ -178,12 +187,13 @@ export default function HomePage({ onCreateNote, onSelectNote }: HomePageProps) 
                     </div>
 
                     {/* Notes Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="flex flex-wrap gap-6">
                       {dateNotes.map((note) => (
                         <NoteCard
                           key={note.id}
                           note={note}
                           onClick={() => onSelectNote(note)}
+                          className="flex-1 min-w-[300px] max-w-[calc(33.333%-16px)]"
                         />
                       ))}
                     </div>
