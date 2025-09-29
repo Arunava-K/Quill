@@ -8,6 +8,7 @@ import Header from "./components/Header";
 import FloatingActionButton from "./components/FloatingActionButton";
 import SidebarToggle from "./components/SidebarToggle";
 import HomePage from "./pages/HomePage";
+import { DragAndDropProvider } from "./contexts/DragAndDropContext";
 
 function App() {
   const [notes, setNotes] = useState<Note[]>([]);
@@ -109,6 +110,24 @@ function App() {
     }
   };
 
+  const handleNoteDrop = async (noteId: number, folderId: number | null) => {
+    try {
+      const updatedNote = await invoke<Note>("move_note_to_folder", {
+        noteId,
+        folderId,
+      });
+      // Update the notes list with the updated note
+      setNotes(notes.map(note => note.id === noteId ? updatedNote : note));
+      // If the currently selected note was updated, update it too
+      if (selectedNote?.id === noteId) {
+        setSelectedNote(updatedNote);
+      }
+    } catch (error) {
+      console.error("Failed to move note to folder:", error);
+      alert("Failed to move note. Please try again.");
+    }
+  };
+
   if (loading) {
     return (
       <div 
@@ -200,45 +219,47 @@ function App() {
   };
 
   return (
-    <div className="h-screen overflow-hidden" style={{ backgroundColor: 'var(--color-background)' }}>
-      {/* Mobile Header */}
-      <Header 
-        onToggleSidebar={toggleSidebar}
-        currentView={currentView}
-      />
-      
-      {/* Card Layout Container */}
-      <div className={`h-full lg:h-screen p-3 flex layout-container ${sidebarCollapsed ? 'gap-0' : 'gap-3 lg:gap-3'}`}>
-        {/* Floating Sidebar with Animation */}
-        <div className={`sidebar-container ${sidebarCollapsed ? 'sidebar-collapsed' : 'sidebar-expanded'}`}>
-          <Sidebar
-            currentView={currentView}
-            onViewChange={setCurrentView}
-            onCreateNote={createNote}
-            isOpen={sidebarOpen}
-            onToggle={toggleSidebar}
-            selectedFolderId={selectedFolderId}
-            onSelectFolder={handleFolderSelect}
-          />
+    <DragAndDropProvider onNoteDrop={handleNoteDrop}>
+      <div className="h-screen overflow-hidden" style={{ backgroundColor: 'var(--color-background)' }}>
+        {/* Mobile Header */}
+        <Header 
+          onToggleSidebar={toggleSidebar}
+          currentView={currentView}
+        />
+        
+        {/* Card Layout Container */}
+        <div className={`h-full lg:h-screen p-3 flex layout-container ${sidebarCollapsed ? 'gap-0' : 'gap-3 lg:gap-3'}`}>
+          {/* Floating Sidebar with Animation */}
+          <div className={`sidebar-container ${sidebarCollapsed ? 'sidebar-collapsed' : 'sidebar-expanded'}`}>
+            <Sidebar
+              currentView={currentView}
+              onViewChange={setCurrentView}
+              onCreateNote={createNote}
+              isOpen={sidebarOpen}
+              onToggle={toggleSidebar}
+              selectedFolderId={selectedFolderId}
+              onSelectFolder={handleFolderSelect}
+            />
+          </div>
+          
+          {/* Main Content Card with Animation */}
+          <div 
+            className={`backdrop-blur-sm rounded-18 shadow-soft overflow-y-auto main-content ${
+              sidebarCollapsed ? 'main-content-expanded' : ''
+            }`}
+            style={{ 
+              backgroundColor: 'var(--color-surface)',
+              border: '1px solid var(--color-neutral-300)'
+            }}
+          >
+            {renderMainContent()}
+          </div>
         </div>
         
-        {/* Main Content Card with Animation */}
-        <div 
-          className={`backdrop-blur-sm rounded-18 shadow-soft overflow-y-auto main-content ${
-            sidebarCollapsed ? 'main-content-expanded' : ''
-          }`}
-          style={{ 
-            backgroundColor: 'var(--color-surface)',
-            border: '1px solid var(--color-neutral-300)'
-          }}
-        >
-          {renderMainContent()}
-        </div>
+        {/* Floating Action Button for Mobile */}
+        <FloatingActionButton onClick={createNote} />
       </div>
-      
-      {/* Floating Action Button for Mobile */}
-      <FloatingActionButton onClick={createNote} />
-    </div>
+    </DragAndDropProvider>
   );
 }
 

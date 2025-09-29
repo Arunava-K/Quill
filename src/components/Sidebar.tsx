@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useFolders } from "../hooks/useFolders";
 import FolderTree from "./FolderTree";
+import { useDroppable } from "@dnd-kit/core";
 
 interface SidebarProps {
   currentView: string;
@@ -27,6 +28,14 @@ export default function Sidebar({
   const [editingFolderId, setEditingFolderId] = useState<number | null>(null);
   const [newFolderName, setNewFolderName] = useState("");
   const [newFolderParentId, setNewFolderParentId] = useState<number | null>(null);
+
+  // Make "All Notes" droppable to remove notes from folders
+  const { setNodeRef: setAllNotesRef, isOver: isOverAllNotes } = useDroppable({
+    id: 'all-notes-drop-zone',
+    data: {
+      type: "root",
+    },
+  });
 
   const navigationItems = [
     {
@@ -233,6 +242,7 @@ export default function Sidebar({
               {navigationItems.map((item) => (
                 <button
                   key={item.id}
+                  ref={item.id === 'home' ? setAllNotesRef : undefined}
                   onClick={() => {
                     onViewChange(item.id);
                     // Reset folder selection when navigating to Home
@@ -246,24 +256,39 @@ export default function Sidebar({
                   }}
                   className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-all duration-200"
                   style={{
-                    backgroundColor: currentView === item.id ? 'var(--color-neutral-200)' : 'transparent',
-                    color: currentView === item.id ? 'var(--color-text-primary)' : 'var(--color-text-secondary)'
+                    backgroundColor: item.id === 'home' && isOverAllNotes
+                      ? 'var(--color-primary-100)'
+                      : currentView === item.id 
+                        ? 'var(--color-neutral-200)' 
+                        : 'transparent',
+                    color: item.id === 'home' && isOverAllNotes
+                      ? 'var(--color-primary-700)'
+                      : currentView === item.id 
+                        ? 'var(--color-text-primary)' 
+                        : 'var(--color-text-secondary)',
+                    border: item.id === 'home' && isOverAllNotes 
+                      ? '2px dashed var(--color-primary-500)' 
+                      : '2px solid transparent',
                   }}
                   onMouseEnter={(e) => {
-                    if (currentView !== item.id) {
+                    if (currentView !== item.id && !(item.id === 'home' && isOverAllNotes)) {
                       e.currentTarget.style.backgroundColor = 'var(--color-neutral-100)';
                       e.currentTarget.style.color = 'var(--color-text-primary)';
                     }
                   }}
                   onMouseLeave={(e) => {
-                    if (currentView !== item.id) {
+                    if (currentView !== item.id && !(item.id === 'home' && isOverAllNotes)) {
                       e.currentTarget.style.backgroundColor = 'transparent';
                       e.currentTarget.style.color = 'var(--color-text-secondary)';
                     }
                   }}
                 >
                   <span style={{ 
-                    color: currentView === item.id ? 'var(--color-text-primary)' : 'var(--color-text-secondary)' 
+                    color: item.id === 'home' && isOverAllNotes
+                      ? 'var(--color-primary-700)'
+                      : currentView === item.id 
+                        ? 'var(--color-text-primary)' 
+                        : 'var(--color-text-secondary)' 
                   }}>
                     {item.icon}
                   </span>

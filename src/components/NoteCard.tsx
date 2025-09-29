@@ -1,5 +1,7 @@
 import { Note } from "../types";
 import { useFolders } from "../hooks/useFolders";
+import { useDraggable } from "@dnd-kit/core";
+import { CSS } from "@dnd-kit/utilities";
 
 interface NoteCardProps {
   note: Note;
@@ -10,6 +12,22 @@ interface NoteCardProps {
 
 export default function NoteCard({ note, onClick, showFolder = true, className = "" }: NoteCardProps) {
   const { getFolderById } = useFolders();
+  
+  // Set up drag functionality
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: `note-${note.id}`,
+    data: {
+      type: "note",
+      note: note,
+    },
+  });
+
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    opacity: isDragging ? 0.5 : 1,
+    cursor: isDragging ? "grabbing" : "grab",
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -47,18 +65,26 @@ export default function NoteCard({ note, onClick, showFolder = true, className =
 
   return (
     <div
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
       className={`group relative rounded-2xl p-6 cursor-pointer max-w-96 ${className}`}
       style={{
         backgroundColor: 'var(--color-background)',
         border: '1px solid var(--color-neutral-300)',
+        ...style,
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = 'var(--color-neutral-50)';
-        e.currentTarget.style.borderColor = 'var(--color-neutral-400)';
+        if (!isDragging) {
+          e.currentTarget.style.backgroundColor = 'var(--color-neutral-50)';
+          e.currentTarget.style.borderColor = 'var(--color-neutral-400)';
+        }
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = 'var(--color-background)';
-        e.currentTarget.style.borderColor = 'var(--color-neutral-300)';
+        if (!isDragging) {
+          e.currentTarget.style.backgroundColor = 'var(--color-background)';
+          e.currentTarget.style.borderColor = 'var(--color-neutral-300)';
+        }
       }}
       onClick={onClick}
     >

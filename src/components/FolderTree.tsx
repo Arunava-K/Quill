@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { FolderTreeNode } from "../types";
+import { useDroppable } from "@dnd-kit/core";
 
 interface FolderTreeProps {
   folders: FolderTreeNode[];
@@ -38,6 +39,15 @@ function FolderNode({
   const isSelected = selectedFolderId === folder.id;
   const hasChildren = folder.children.length > 0;
 
+  // Make folder droppable
+  const { setNodeRef, isOver } = useDroppable({
+    id: `folder-${folder.id}`,
+    data: {
+      type: "folder",
+      folder: folder,
+    },
+  });
+
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onSelectFolder(folder.id);
@@ -59,6 +69,7 @@ function FolderNode({
   return (
     <div>
       <div
+        ref={setNodeRef}
         className={`group flex items-center px-3 py-2 rounded-xl cursor-pointer transition-all relative ${
           isSelected
             ? "font-medium"
@@ -66,8 +77,17 @@ function FolderNode({
         }`}
         style={{
           paddingLeft: `${12 + level * 20}px`,
-          backgroundColor: isSelected ? "var(--color-neutral-200)" : "transparent",
-          color: isSelected ? "var(--color-text-primary)" : "var(--color-text-secondary)",
+          backgroundColor: isOver 
+            ? "var(--color-primary-100)" 
+            : isSelected 
+              ? "var(--color-neutral-200)" 
+              : "transparent",
+          color: isOver
+            ? "var(--color-primary-700)"
+            : isSelected 
+              ? "var(--color-text-primary)" 
+              : "var(--color-text-secondary)",
+          border: isOver ? "2px dashed var(--color-primary-500)" : "2px solid transparent",
         }}
         onClick={handleClick}
         onContextMenu={handleContextMenu}

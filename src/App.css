@@ -255,3 +255,27 @@ body {
     animation: none !important;
   }
 }
+
+/* Drag and Drop Enhancements */
+.dragging {
+  cursor: grabbing !important;
+  z-index: 1000;
+}
+
+.dragging * {
+  cursor: grabbing !important;
+}
+
+.drop-target-active {
+  transition: all 0.2s ease;
+  transform: scale(1.02);
+}
+
+/* Smooth transitions for drag feedback */
+.drag-item {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.drag-item:active {
+  cursor: grabbing;
+}
