@@ -60,7 +60,7 @@ export default function NoteEditor({ note, onUpdateNote }: NoteEditorProps) {
   return (
     <div className="flex-1 flex flex-col h-full">
       {/* Header */}
-      <div className="p-6 bg-white/80 backdrop-blur-sm border-b border-primary-100/50">
+      <div className="p-6 border-b border-primary-100/50">
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1 mr-4">
             <input
@@ -113,7 +113,7 @@ export default function NoteEditor({ note, onUpdateNote }: NoteEditorProps) {
       </div>
       
       {/* Editor */}
-      <div className="flex-1 p-6 bg-white/40 backdrop-blur-xs">
+      <div className="flex-1 p-6">
         <div className="h-full bg-white/60 rounded-2xl p-6 shadow-soft border border-white/50">
           <textarea
             value={content}

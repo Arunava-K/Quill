@@ -2,55 +2,59 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary-50: #f8f6ff;
-  --color-primary-100: #f0ebff;
-  --color-primary-200: #e4d9ff;
-  --color-primary-300: #d1bbff;
-  --color-primary-400: #b892ff;
-  --color-primary-500: #9d66ff;
-  --color-primary-600: #8b3dff;
-  --color-primary-700: #7c2ae8;
-  --color-primary-800: #6a23c4;
-  --color-primary-900: #581ea1;
+  /* New Neutral Color Palette */
+  --color-background: #FFFFFF;
+  --color-surface: #F5F4F1;
+  --color-text-primary: #2E2E2E;
+  --color-text-secondary: #434343;
   
-  --color-secondary-50: #fef7f0;
-  --color-secondary-100: #fdeee0;
-  --color-secondary-200: #fad9c1;
-  --color-secondary-300: #f6be96;
-  --color-secondary-400: #f19869;
-  --color-secondary-500: #ed7847;
-  --color-secondary-600: #de5f33;
-  --color-secondary-700: #b84a2a;
-  --color-secondary-800: #933d28;
-  --color-secondary-900: #773424;
+  /* Extended neutral shades for UI elements */
+  --color-neutral-50: #FEFEFE;
+  --color-neutral-100: #F9F8F6;
+  --color-neutral-200: #F5F4F1;
+  --color-neutral-300: #E8E6E1;
+  --color-neutral-400: #C4C1BA;
+  --color-neutral-500: #9B9690;
+  --color-neutral-600: #434343;
+  --color-neutral-700: #2E2E2E;
+  --color-neutral-800: #1F1F1F;
+  --color-neutral-900: #0F0F0F;
   
-  --color-accent-50: #f0fdf9;
-  --color-accent-100: #ccfbef;
-  --color-accent-200: #99f6e0;
-  --color-accent-300: #5eead4;
-  --color-accent-400: #2dd4bf;
-  --color-accent-500: #14b8a6;
-  --color-accent-600: #0d9488;
-  --color-accent-700: #0f766e;
-  --color-accent-800: #115e59;
-  --color-accent-900: #134e4a;
+  /* Accent colors for interactive elements */
+  --color-primary-50: #F0F0F0;
+  --color-primary-100: #E0E0E0;
+  --color-primary-200: #C8C8C8;
+  --color-primary-300: #A8A8A8;
+  --color-primary-400: #808080;
+  --color-primary-500: #6B6B6B;
+  --color-primary-600: #434343;
+  --color-primary-700: #2E2E2E;
+  --color-primary-800: #1F1F1F;
+  --color-primary-900: #0F0F0F;
   
-  --color-neutral-50: #fafafa;
-  --color-neutral-100: #f5f5f5;
-  --color-neutral-200: #e5e5e5;
-  --color-neutral-300: #d4d4d4;
-  --color-neutral-400: #a3a3a3;
-  --color-neutral-500: #737373;
-  --color-neutral-600: #525252;
-  --color-neutral-700: #404040;
-  --color-neutral-800: #262626;
-  --color-neutral-900: #171717;
+  /* Semantic colors */
+  --color-success-50: #F0FDF4;
+  --color-success-500: #22C55E;
+  --color-success-600: #16A34A;
+  
+  --color-warning-50: #FFFBEB;
+  --color-warning-500: #F59E0B;
+  --color-warning-600: #D97706;
+  
+  --color-error-50: #FEF2F2;
+  --color-error-500: #EF4444;
+  --color-error-600: #DC2626;
+  
+  --color-info-50: #EFF6FF;
+  --color-info-500: #3B82F6;
+  --color-info-600: #2563EB;
   
   --font-family-sans: 'Inter', system-ui, sans-serif;
   
   --shadow-soft: 0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04);
   --shadow-medium: 0 4px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   --shadow-large: 0 10px 40px -10px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-3xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   
   --radius-xl: 1rem;
   --radius-2xl: 1.5rem;
@@ -69,6 +73,13 @@ body {
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -109,4 +120,14 @@ body {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Custom shadow utilities */
+.shadow-3xl {
+  box-shadow: var(--shadow-3xl);
+}
+
+/* Custom border radius */
+.rounded-18 {
+  border-radius: 18px;
 }
