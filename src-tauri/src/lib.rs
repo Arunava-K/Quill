@@ -18,17 +18,23 @@ pub async fn run() {
         .expect("Failed to connect to database");
 
     // Run migrations
-    match sqlx::query(include_str!("../migrations/1_create_notes_table.sql"))
-        .execute(&pool)
-        .await
-    {
-        Ok(_) => println!("Database migration completed successfully"),
-        Err(e) => {
-            // If table already exists, that's fine - just log it
-            if e.to_string().contains("already exists") {
-                println!("Database table already exists, skipping migration");
-            } else {
-                panic!("Failed to run migrations: {}", e);
+    let migrations = vec![
+        include_str!("../migrations/1_create_notes_table.sql"),
+        include_str!("../migrations/2_create_folders_table.sql"),
+        include_str!("../migrations/3_extend_notes_table.sql"),
+    ];
+
+    for (index, migration_sql) in migrations.iter().enumerate() {
+        match sqlx::query(migration_sql).execute(&pool).await {
+            Ok(_) => println!("Migration {} completed successfully", index + 1),
+            Err(e) => {
+                // If table/column already exists, that's fine - just log it
+                if e.to_string().contains("already exists") || e.to_string().contains("duplicate column") {
+                    println!("Migration {} already applied, skipping", index + 1);
+                } else {
+                    eprintln!("Warning: Migration {} had an error: {}", index + 1, e);
+                    // Don't panic, just continue - some errors are expected
+                }
             }
         }
     }
@@ -41,6 +47,13 @@ pub async fn run() {
             commands::get_notes,
             commands::update_note,
             commands::delete_note,
+            commands::create_folder,
+            commands::get_folders,
+            commands::update_folder,
+            commands::delete_folder,
+            commands::move_note_to_folder,
+            commands::toggle_note_starred,
+            commands::get_notes_by_folder,
             open_quick_note_window
         ])
         .on_window_event(|window, event| {

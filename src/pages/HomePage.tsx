@@ -10,19 +10,37 @@ interface HomePageProps {
   onCreateNote: () => void;
   onSelectNote: (note: Note) => void;
   onToggleSidebar?: () => void;
+  selectedFolderId?: number | null;
 }
 
-export default function HomePage({ onCreateNote, onSelectNote, onToggleSidebar }: HomePageProps) {
+export default function HomePage({ onCreateNote, onSelectNote, onToggleSidebar, selectedFolderId }: HomePageProps) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadNotes();
-  }, []);
+  }, [selectedFolderId]);
 
   const loadNotes = async () => {
     try {
-      const fetchedNotes = await invoke<Note[]>("get_notes");
+      setLoading(true);
+      let fetchedNotes: Note[];
+      
+      if (selectedFolderId !== undefined && selectedFolderId !== null) {
+        // Load notes for specific folder
+        fetchedNotes = await invoke<Note[]>("get_notes_by_folder", {
+          folderId: selectedFolderId
+        });
+      } else if (selectedFolderId === null) {
+        // Load only root notes (notes without folder)
+        fetchedNotes = await invoke<Note[]>("get_notes_by_folder", {
+          folderId: null
+        });
+      } else {
+        // Load all notes
+        fetchedNotes = await invoke<Note[]>("get_notes");
+      }
+      
       setNotes(fetchedNotes);
     } catch (error) {
       console.error("Failed to load notes:", error);
@@ -84,12 +102,17 @@ export default function HomePage({ onCreateNote, onSelectNote, onToggleSidebar }
                   className="text-3xl font-bold mb-1"
                   style={{ color: 'var(--color-text-primary)' }}
                 >
-                  Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}! 👋
+                  {selectedFolderId !== undefined
+                    ? "Folder Notes"
+                    : `Good ${new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}! 👋`
+                  }
                 </h1>
                 <p style={{ color: 'var(--color-text-secondary)' }}>
-                  {notes.length === 0 
-                    ? "Ready to capture your first thought?" 
-                    : `You have ${notes.length} note${notes.length === 1 ? '' : 's'} in your workspace`
+                  {selectedFolderId !== undefined
+                    ? `${notes.length} note${notes.length === 1 ? '' : 's'} in this folder`
+                    : notes.length === 0 
+                      ? "Ready to capture your first thought?" 
+                      : `You have ${notes.length} note${notes.length === 1 ? '' : 's'} in your workspace`
                   }
                 </p>
               </div>

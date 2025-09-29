@@ -1,15 +1,33 @@
-import { Note } from "../types";
+import { useState } from "react";
+import { useFolders } from "../hooks/useFolders";
+import FolderTree from "./FolderTree";
 
 interface SidebarProps {
   currentView: string;
   onViewChange: (view: string) => void;
   onCreateNote: () => void;
-  notes: Note[];
   isOpen: boolean;
   onToggle: () => void;
+  selectedFolderId?: number | null;
+  onSelectFolder?: (folderId: number | null | undefined) => void;
 }
 
-export default function Sidebar({ currentView, onViewChange, onCreateNote, notes, isOpen, onToggle }: SidebarProps) {
+export default function Sidebar({ 
+  currentView, 
+  onViewChange, 
+  onCreateNote, 
+  isOpen, 
+  onToggle,
+  selectedFolderId,
+  onSelectFolder 
+}: SidebarProps) {
+  const { folderTree, createFolder, updateFolder, deleteFolder } = useFolders();
+  const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
+  const [showEditFolderDialog, setShowEditFolderDialog] = useState(false);
+  const [editingFolderId, setEditingFolderId] = useState<number | null>(null);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [newFolderParentId, setNewFolderParentId] = useState<number | null>(null);
+
   const navigationItems = [
     {
       id: 'home',
@@ -49,12 +67,63 @@ export default function Sidebar({ currentView, onViewChange, onCreateNote, notes
     }
   ];
 
-  const workspaceFolders = [
-    { id: 'folder-1', name: 'Folder 1', count: Math.floor(notes.length * 0.3) },
-    { id: 'folder-2', name: 'Folder 2', count: Math.floor(notes.length * 0.25) },
-    { id: 'folder-3', name: 'Folder 3', count: Math.floor(notes.length * 0.2) },
-    { id: 'folder-4', name: 'Folder 4', count: Math.floor(notes.length * 0.25) }
-  ];
+  const handleCreateFolder = async (parentId?: number) => {
+    setNewFolderParentId(parentId || null);
+    setShowNewFolderDialog(true);
+  };
+
+  const handleEditFolder = async (folderId: number) => {
+    setEditingFolderId(folderId);
+    const folder = folderTree.find(f => f.id === folderId);
+    if (folder) {
+      setNewFolderName(folder.name);
+      setShowEditFolderDialog(true);
+    }
+  };
+
+  const handleDeleteFolder = async (folderId: number) => {
+    try {
+      await deleteFolder(folderId);
+    } catch (error) {
+      console.error("Failed to delete folder:", error);
+      alert("Failed to delete folder. Please try again.");
+    }
+  };
+
+  const handleSubmitNewFolder = async () => {
+    if (!newFolderName.trim()) {
+      alert("Folder name cannot be empty");
+      return;
+    }
+
+    try {
+      await createFolder(newFolderName, newFolderParentId);
+      setShowNewFolderDialog(false);
+      setNewFolderName("");
+      setNewFolderParentId(null);
+    } catch (error) {
+      console.error("Failed to create folder:", error);
+      alert("Failed to create folder. Please try again.");
+    }
+  };
+
+  const handleSubmitEditFolder = async () => {
+    if (!newFolderName.trim() || !editingFolderId) {
+      alert("Folder name cannot be empty");
+      return;
+    }
+
+    try {
+      const folder = folderTree.find(f => f.id === editingFolderId);
+      await updateFolder(editingFolderId, newFolderName, folder?.parent_id);
+      setShowEditFolderDialog(false);
+      setNewFolderName("");
+      setEditingFolderId(null);
+    } catch (error) {
+      console.error("Failed to update folder:", error);
+      alert("Failed to update folder. Please try again.");
+    }
+  };
 
   return (
     <>
@@ -166,6 +235,10 @@ export default function Sidebar({ currentView, onViewChange, onCreateNote, notes
                   key={item.id}
                   onClick={() => {
                     onViewChange(item.id);
+                    // Reset folder selection when navigating to Home
+                    if (item.id === 'home' && onSelectFolder) {
+                      onSelectFolder(undefined);
+                    }
                     // Auto-close sidebar on mobile after navigation
                     if (window.innerWidth < 1024) {
                       onToggle();
@@ -206,9 +279,10 @@ export default function Sidebar({ currentView, onViewChange, onCreateNote, notes
                   className="text-sm font-semibold uppercase tracking-wider"
                   style={{ color: 'var(--color-text-primary)' }}
                 >
-                  Workspace
+                  Folders
                 </h3>
                 <button 
+                  onClick={() => handleCreateFolder()}
                   className="p-1 rounded transition-colors"
                   style={{ color: 'var(--color-text-secondary)' }}
                   onMouseEnter={(e) => {
@@ -217,43 +291,58 @@ export default function Sidebar({ currentView, onViewChange, onCreateNote, notes
                   onMouseLeave={(e) => {
                     e.currentTarget.style.color = 'var(--color-text-secondary)';
                   }}
+                  title="New Folder"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
                 </button>
               </div>
-              <div className="space-y-1">
-                {workspaceFolders.map((folder) => (
-                  <button
-                    key={folder.id}
-                    onClick={() => {
-                      onViewChange(folder.id);
-                      // Auto-close sidebar on mobile after navigation
-                      if (window.innerWidth < 1024) {
-                        onToggle();
-                      }
-                    }}
-                    className={`w-full flex items-center justify-between px-4 py-2 rounded-lg text-left transition-all duration-200 ${
-                      currentView === folder.id
-                        ? 'bg-primary-50 text-primary-700'
-                        : 'text-neutral-600 hover:bg-neutral-50'
-                    }`}
+              
+              {folderTree.length > 0 ? (
+                <FolderTree
+                  folders={folderTree}
+                  selectedFolderId={selectedFolderId}
+                  onSelectFolder={(folderId) => {
+                    onSelectFolder?.(folderId);
+                    // Auto-close sidebar on mobile
+                    if (window.innerWidth < 1024) {
+                      onToggle();
+                    }
+                  }}
+                  onCreateFolder={handleCreateFolder}
+                  onEditFolder={handleEditFolder}
+                  onDeleteFolder={handleDeleteFolder}
+                />
+              ) : (
+                <div className="text-center py-8 px-4">
+                  <svg 
+                    className="w-12 h-12 mx-auto mb-3 opacity-30" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                    style={{ color: 'var(--color-text-secondary)' }}
                   >
-                    <div className="flex items-center space-x-3">
-                      <svg className="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-5l-2-2H5a2 2 0 00-2 2z" />
-                      </svg>
-                      <span className="text-sm font-medium">{folder.name}</span>
-                    </div>
-                    {folder.count > 0 && (
-                      <span className="text-xs text-neutral-400 bg-neutral-100 px-2 py-1 rounded-full">
-                        {folder.count}
-                      </span>
-                    )}
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-5l-2-2H5a2 2 0 00-2 2z" />
+                  </svg>
+                  <p 
+                    className="text-sm mb-3"
+                    style={{ color: 'var(--color-text-secondary)' }}
+                  >
+                    No folders yet
+                  </p>
+                  <button
+                    onClick={() => handleCreateFolder()}
+                    className="text-xs px-3 py-1.5 rounded-lg transition-colors"
+                    style={{ 
+                      backgroundColor: 'var(--color-neutral-200)',
+                      color: 'var(--color-text-primary)'
+                    }}
+                  >
+                    Create your first folder
                   </button>
-                ))}
-              </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -299,6 +388,142 @@ export default function Sidebar({ currentView, onViewChange, onCreateNote, notes
           </div>
         </div>
       </div>
+
+      {/* New Folder Dialog */}
+      {showNewFolderDialog && (
+        <>
+          <div 
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50"
+            onClick={() => {
+              setShowNewFolderDialog(false);
+              setNewFolderName("");
+              setNewFolderParentId(null);
+            }}
+          />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div 
+              className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-xl font-bold mb-4" style={{ color: 'var(--color-text-primary)' }}>
+                Create New Folder
+              </h3>
+              <input
+                type="text"
+                value={newFolderName}
+                onChange={(e) => setNewFolderName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSubmitNewFolder();
+                  } else if (e.key === 'Escape') {
+                    setShowNewFolderDialog(false);
+                    setNewFolderName("");
+                    setNewFolderParentId(null);
+                  }
+                }}
+                placeholder="Folder name"
+                autoFocus
+                className="w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:border-primary-500 transition-colors mb-4"
+                style={{
+                  borderColor: 'var(--color-neutral-300)',
+                  backgroundColor: 'var(--color-background)'
+                }}
+              />
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => {
+                    setShowNewFolderDialog(false);
+                    setNewFolderName("");
+                    setNewFolderParentId(null);
+                  }}
+                  className="px-4 py-2 rounded-xl transition-colors"
+                  style={{
+                    backgroundColor: 'var(--color-neutral-200)',
+                    color: 'var(--color-text-secondary)'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSubmitNewFolder}
+                  className="px-4 py-2 rounded-xl text-white transition-colors"
+                  style={{ backgroundColor: 'var(--color-text-primary)' }}
+                >
+                  Create
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Edit Folder Dialog */}
+      {showEditFolderDialog && (
+        <>
+          <div 
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50"
+            onClick={() => {
+              setShowEditFolderDialog(false);
+              setNewFolderName("");
+              setEditingFolderId(null);
+            }}
+          />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div 
+              className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-xl font-bold mb-4" style={{ color: 'var(--color-text-primary)' }}>
+                Rename Folder
+              </h3>
+              <input
+                type="text"
+                value={newFolderName}
+                onChange={(e) => setNewFolderName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSubmitEditFolder();
+                  } else if (e.key === 'Escape') {
+                    setShowEditFolderDialog(false);
+                    setNewFolderName("");
+                    setEditingFolderId(null);
+                  }
+                }}
+                placeholder="Folder name"
+                autoFocus
+                className="w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:border-primary-500 transition-colors mb-4"
+                style={{
+                  borderColor: 'var(--color-neutral-300)',
+                  backgroundColor: 'var(--color-background)'
+                }}
+              />
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => {
+                    setShowEditFolderDialog(false);
+                    setNewFolderName("");
+                    setEditingFolderId(null);
+                  }}
+                  className="px-4 py-2 rounded-xl transition-colors"
+                  style={{
+                    backgroundColor: 'var(--color-neutral-200)',
+                    color: 'var(--color-text-secondary)'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSubmitEditFolder}
+                  className="px-4 py-2 rounded-xl text-white transition-colors"
+                  style={{ backgroundColor: 'var(--color-text-primary)' }}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 }

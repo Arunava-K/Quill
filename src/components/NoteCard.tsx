@@ -1,4 +1,5 @@
 import { Note } from "../types";
+import { useFolders } from "../hooks/useFolders";
 
 interface NoteCardProps {
   note: Note;
@@ -7,7 +8,8 @@ interface NoteCardProps {
   className?: string;
 }
 
-export default function NoteCard({ note, onClick, showFolder = false, className = "" }: NoteCardProps) {
+export default function NoteCard({ note, onClick, showFolder = true, className = "" }: NoteCardProps) {
+  const { getFolderById } = useFolders();
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -63,23 +65,31 @@ export default function NoteCard({ note, onClick, showFolder = false, className 
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1 min-w-0">
-          <h3 
-            className="font-semibold text-lg leading-tight mb-1 truncate transition-colors"
-            style={{ color: 'var(--color-text-primary)' }}
-          >
-            {note.title || "Untitled"}
-          </h3>
-          {showFolder && (
-            <div 
-              className="flex items-center text-xs mb-2"
-              style={{ color: 'var(--color-text-secondary)' }}
+          <div className="flex items-center gap-2 mb-2">
+            <h3 
+              className="font-semibold text-lg leading-tight truncate transition-colors"
+              style={{ color: 'var(--color-text-primary)' }}
             >
-              <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-5l-2-2H5a2 2 0 00-2 2z" />
-              </svg>
-              <span>Folder name</span>
-            </div>
-          )}
+              {note.title || "Untitled"}
+            </h3>
+            {showFolder && note.folder_id && (() => {
+              const folder = getFolderById(note.folder_id);
+              return folder ? (
+                <span 
+                  className="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium whitespace-nowrap flex-shrink-0"
+                  style={{ 
+                    backgroundColor: 'var(--color-primary-100)',
+                    color: 'var(--color-primary-700)'
+                  }}
+                >
+                  <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-5l-2-2H5a2 2 0 00-2 2z" />
+                  </svg>
+                  {folder.name}
+                </span>
+              ) : null;
+            })()}
+          </div>
         </div>
         
         {/* Action buttons */}
@@ -128,16 +138,12 @@ export default function NoteCard({ note, onClick, showFolder = false, className 
         </p>
       </div>
 
-      {/* Tags placeholder */}
-      <div className="flex items-center space-x-2 mb-4">
-        {/* TODO: Replace with actual tags */}
+      {/* Tags placeholder - will be implemented in Phase 3 */}
+      {/* <div className="flex items-center space-x-2 mb-4">
         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-700">
           #tag-1
         </span>
-        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-secondary-100 text-secondary-700">
-          #tag-2
-        </span>
-      </div>
+      </div> */}
 
       {/* Footer */}
         <div 

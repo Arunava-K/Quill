@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import "./App.css";
 import { Note } from "./types";
-import NotesList from "./components/NotesList";
 import NoteEditor from "./components/NoteEditor";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
@@ -17,6 +16,15 @@ function App() {
   const [currentView, setCurrentView] = useState<string>('home');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [selectedFolderId, setSelectedFolderId] = useState<number | null | undefined>(undefined);
+
+  const handleFolderSelect = (folderId: number | null | undefined) => {
+    setSelectedFolderId(folderId);
+    // Only switch to home view if a folder is selected (not when resetting to undefined)
+    if (folderId !== undefined) {
+      setCurrentView('home');
+    }
+  };
 
   useEffect(() => {
     loadNotes();
@@ -64,6 +72,7 @@ function App() {
       const newNote = await invoke<Note>("add_note", {
         title: "New Note",
         content: "",
+        folderId: selectedFolderId,
       });
       setNotes([newNote, ...notes]);
       setSelectedNote(newNote);
@@ -100,19 +109,6 @@ function App() {
     }
   };
 
-  const deleteNote = async (id: number) => {
-    try {
-      await invoke("delete_note", { id });
-      const updatedNotes = notes.filter(note => note.id !== id);
-      setNotes(updatedNotes);
-      if (selectedNote?.id === id) {
-        setSelectedNote(updatedNotes.length > 0 ? updatedNotes[0] : null);
-      }
-    } catch (error) {
-      console.error("Failed to delete note:", error);
-    }
-  };
-
   if (loading) {
     return (
       <div 
@@ -146,6 +142,7 @@ function App() {
             onCreateNote={createNote}
             onSelectNote={handleSelectNote}
             onToggleSidebar={toggleSidebarCollapse}
+            selectedFolderId={selectedFolderId}
           />
         );
       case 'editor':
@@ -218,9 +215,10 @@ function App() {
             currentView={currentView}
             onViewChange={setCurrentView}
             onCreateNote={createNote}
-            notes={notes}
             isOpen={sidebarOpen}
             onToggle={toggleSidebar}
+            selectedFolderId={selectedFolderId}
+            onSelectFolder={handleFolderSelect}
           />
         </div>
         
