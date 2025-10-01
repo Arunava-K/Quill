@@ -26,7 +26,7 @@ export default function NoteCard({ note, onClick, showFolder = true, className =
 
   const style = {
     transform: CSS.Translate.toString(transform),
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0 : 1,
     cursor: isDragging ? "grabbing" : "grab",
   };
 

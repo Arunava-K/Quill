@@ -331,13 +331,11 @@ pub async fn toggle_note_starred(
     pool: State<'_, Arc<SqlitePool>>,
     note_id: i64,
 ) -> Result<Note, String> {
-    let now = chrono::Utc::now().to_rfc3339();
-    
-    // Toggle the is_starred field
+    // Toggle the is_starred field WITHOUT updating the updated_at timestamp
+    // Starring/unstarring should not affect the note's modification date
     let result = sqlx::query(
-        "UPDATE notes SET is_starred = NOT is_starred, updated_at = ? WHERE id = ?"
+        "UPDATE notes SET is_starred = NOT is_starred WHERE id = ?"
     )
-    .bind(&now)
     .bind(note_id)
     .execute(&**pool)
     .await
