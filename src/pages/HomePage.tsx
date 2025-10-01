@@ -2,8 +2,6 @@ import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Note } from "../types";
 import NoteCard from "../components/NoteCard";
-import QuickStats from "../components/QuickStats";
-import RecentNotes from "../components/RecentNotes";
 import SidebarToggle from "../components/SidebarToggle";
 
 interface HomePageProps {
@@ -48,11 +46,6 @@ export default function HomePage({ onCreateNote, onSelectNote, onToggleSidebar, 
       setLoading(false);
     }
   };
-
-  // Get recent notes (last 6)
-  const recentNotes = notes
-    .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-    .slice(0, 6);
 
   // Group notes by date for the main content
   const groupedNotes = notes.reduce((groups: { [key: string]: Note[] }, note) => {
@@ -138,36 +131,6 @@ export default function HomePage({ onCreateNote, onSelectNote, onToggleSidebar, 
       </div>
 
       <div className="px-8 py-6 space-y-8">
-        {/* Quick Stats */}
-        <QuickStats notes={notes} />
-
-        {/* Recent Notes Section */}
-        {recentNotes.length > 0 && (
-          <section>
-            <div className="flex items-center justify-between mb-6">
-              <h2 
-                className="text-xl font-semibold"
-                style={{ color: 'var(--color-text-primary)' }}
-              >
-                Recent Notes
-              </h2>
-              <button 
-                className="text-sm font-medium transition-colors"
-                style={{ color: 'var(--color-text-secondary)' }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = 'var(--color-text-primary)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = 'var(--color-text-secondary)';
-                }}
-              >
-                View all →
-              </button>
-            </div>
-            <RecentNotes notes={recentNotes} onSelectNote={onSelectNote} />
-          </section>
-        )}
-
         {/* All Notes by Date */}
         {Object.keys(groupedNotes).length > 0 ? (
           <section>
