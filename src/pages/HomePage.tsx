@@ -9,9 +9,10 @@ interface HomePageProps {
   onSelectNote: (note: Note) => void;
   onToggleSidebar?: () => void;
   selectedFolderId?: number | null;
+  onStarToggle?: (updatedNote: Note) => void;
 }
 
-export default function HomePage({ onCreateNote, onSelectNote, onToggleSidebar, selectedFolderId }: HomePageProps) {
+export default function HomePage({ onCreateNote, onSelectNote, onToggleSidebar, selectedFolderId, onStarToggle }: HomePageProps) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -45,6 +46,13 @@ export default function HomePage({ onCreateNote, onSelectNote, onToggleSidebar, 
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleStarToggle = (updatedNote: Note) => {
+    // Update the local notes list
+    setNotes(notes.map(note => note.id === updatedNote.id ? updatedNote : note));
+    // Propagate to parent
+    onStarToggle?.(updatedNote);
   };
 
   // Group notes by date for the main content
@@ -179,6 +187,7 @@ export default function HomePage({ onCreateNote, onSelectNote, onToggleSidebar, 
                           key={note.id}
                           note={note}
                           onClick={() => onSelectNote(note)}
+                          onStarToggle={handleStarToggle}
                           className="flex-1 min-w-[300px] max-w-[calc(33.333%-16px)]"
                         />
                       ))}
